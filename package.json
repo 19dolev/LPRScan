@@ -10,6 +10,7 @@
   "dependencies": {
     "react": "16.8.3",
     "react-native": "0.59.2",
+    "react-native-barcode-mask": "^1.0.3",
     "react-native-camera": "^2.1.1",
     "react-native-tesseract-ocr": "^1.0.10",
     "react-native-text-detector": "^0.0.6"

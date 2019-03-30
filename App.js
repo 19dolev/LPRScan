@@ -9,7 +9,7 @@
 import React, {Component} from 'react';
 import {Platform, StyleSheet, Text, View, TouchableOpacity} from 'react-native';
 import { RNCamera } from 'react-native-camera';
-import RNTextDetector from "react-native-text-detector";
+import BarcodeMask from 'react-native-barcode-mask';
 
 
 const instructions = Platform.select({
@@ -24,6 +24,7 @@ export default class App extends Component {
   state = {
 
     textBlocks: [],
+    hasDetected: false
   };
   render() {
     return (
@@ -39,6 +40,7 @@ export default class App extends Component {
         onTextRecognized={this.textRecognized}>
 
         {this.renderTextBlocks}
+      <BarcodeMask width={300} height={100} showAnimatedLine={false} edgeBorderWidth={0.7}/>
       </RNCamera>
     );
   }
@@ -74,8 +76,12 @@ export default class App extends Component {
 
   extractNumbers = (item) => {
     const v = item.value.replace(/[^0-9]/g,'')
-     if(v.length === 7 || v.length === 8) {
-       console.log(v);
+     if((v.length === 7 || v.length === 8) && !this.state.hasDetected) {
+       this.setState({hasDetected: true}, () => {
+         console.log(v);
+         this.camera.pausePreview();
+         alert(v);
+       });
      }
      return item
     //}
