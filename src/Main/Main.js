@@ -30,7 +30,7 @@ export default class Main extends Component {
         onTextRecognized={this.textRecognized}>
 
         {this.renderTextBlocks}
-        <BarcodeMask width={300} height={100} showAnimatedLine={false} edgeBorderWidth={0.7}/>
+        <BarcodeMask width={330} height={200} showAnimatedLine={false} edgeBorderWidth={0.7}/>
         <DialogInput isDialogVisible={this.state.isDialogVisible}
                      title={"תקן אותי"}
                      message={"הזן מספר לוחית רישוי"}
