@@ -7,9 +7,10 @@
  */
 
 import React, {Component} from 'react';
-import {Platform, StyleSheet, Text, View, TouchableOpacity} from 'react-native';
+import {Platform, StyleSheet, Text, View, Alert, BackHandler, Clipboard} from 'react-native';
 import { RNCamera } from 'react-native-camera';
 import BarcodeMask from 'react-native-barcode-mask';
+import DialogInput from 'react-native-dialog-input';
 
 
 const instructions = Platform.select({
@@ -24,7 +25,8 @@ export default class App extends Component {
   state = {
 
     textBlocks: [],
-    hasDetected: false
+    hasDetected: false,
+    isDialogVisible: false,
   };
   render() {
     return (
@@ -41,6 +43,32 @@ export default class App extends Component {
 
         {this.renderTextBlocks}
       <BarcodeMask width={300} height={100} showAnimatedLine={false} edgeBorderWidth={0.7}/>
+        <DialogInput isDialogVisible={this.state.isDialogVisible}
+                     title={"תקן אותי"}
+                     message={"הזן מספר לוחית רישוי"}
+                     hintInput ={"למשל: 01234567"}
+                     textInputProps={{autoCorrect: false}}
+                     submitInput={ (inputText) => {
+
+                       this.setState({isDialogVisible: false})
+                       this.copyToClipboard(inputText);
+                       const thanksMessage = 'תודה. לוחית הרישוי הועתקה ללוח בהצלחה.';
+                       alert(thanksMessage);
+                       this.sleep(2000);
+                       this.setState({hasDetected: false});
+                       this.camera.resumePreview();
+                       BackHandler.exitApp();
+
+                     } }
+                     cancelText={"בטל"}
+                     submitText={"העתק ללוח"}
+                     closeDialog={ () => {
+
+                       this.setState({isDialogVisible: false});
+                       this.camera.resumePreview();
+                       this.setState({hasDetected: false});
+                     }}>
+        </DialogInput>
       </RNCamera>
     );
   }
@@ -78,14 +106,58 @@ export default class App extends Component {
     const v = item.value.replace(/[^0-9]/g,'')
      if((v.length === 7 || v.length === 8) && !this.state.hasDetected) {
        this.setState({hasDetected: true}, () => {
-         console.log(v);
-         this.camera.pausePreview();
-         alert(v);
+         this.licensePlateDetected(v);
        });
      }
      return item
     //}
   }
+
+  sleep(milliseconds) {
+    let start = new Date().getTime();
+    for (let i = 0; i < 1e7; i++) {
+      if ((new Date().getTime() - start) > milliseconds){
+        break;
+      }
+    }
+  }
+
+  copyToClipboard = (value) => {
+
+    Clipboard.setString(value);
+  }
+
+  licensePlateDetected = (value) => {
+
+    console.log(value);
+    this.camera.pausePreview();
+    const beforeId = 'המספר שזוהה: ';
+    const afterId = '. האם המספר מתאים?'
+    Alert.alert(
+      'לוחית רישוי זוהתה',
+       beforeId + value + afterId,
+      [
+        {
+          text: 'לא, אני רוצה לשנות',
+          onPress: () => {this.setState({isDialogVisible: true})},
+          style: 'cancel',
+        },
+        {
+          text: 'כן, העתק ללוח',
+          onPress: () => {
+            this.copyToClipboard(value.toString());
+            const thanksMessage = 'תודה. לוחית הרישוי הועתקה ללוח בהצלחה.';
+            alert(thanksMessage);
+            this.sleep(2000);
+            this.camera.resumePreview();
+            BackHandler.exitApp();
+          },
+          style: 'cancel',
+        },
+
+      ],
+      {cancelable: false},
+    );  }
 }
 
 const styles = StyleSheet.create({
