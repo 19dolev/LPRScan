@@ -1,22 +1,45 @@
 import React, {Component} from 'react';
-import {Platform, StyleSheet, Text, View, Alert, BackHandler, Clipboard} from 'react-native';
+import {Text, View, BackHandler, Clipboard, ToastAndroid} from 'react-native';
 import {RNCamera} from 'react-native-camera';
 import BarcodeMask from 'react-native-barcode-mask';
 import DialogInput from 'react-native-dialog-input';
 import styles from './style';
+import AwesomeAlert from 'react-native-awesome-alerts';
+
 
 const regExp = /[^0-9]/g;
+const beforeId = 'המספר שזוהה: ';
+const afterId = '. האם המספר מתאים?';
 
 export default class Main extends Component {
+
 
   state = {
 
     textBlocks: [],
     hasDetected: false,
     isDialogVisible: false,
+    showAlert: false,
+    hasCanceled: false,
+    value: null,
+  };
+  ss
+  showAlert = () => {
+    this.setState({
+      showAlert: true
+    });
+  };
+
+  hideAlert = () => {
+    this.setState({
+      showAlert: false
+    });
   };
 
   render() {
+
+    const {showAlert} = this.state;
+
     return (
       <RNCamera
         ref={ref => {
@@ -46,8 +69,43 @@ export default class Main extends Component {
                        this.setState({isDialogVisible: false});
                        this.camera.resumePreview();
                        this.setState({hasDetected: false});
+                       this.setState({value: null});
                      }}>
         </DialogInput>
+        <AwesomeAlert
+          show={showAlert}
+          showProgress
+          title="זוהתה לוחית רישוי"
+          message={beforeId + this.state.value + afterId}
+          closeOnTouchOutside={false}
+          closeOnHardwareBackPress={true}
+          showCancelButton={true}
+          showConfirmButton={true}
+          cancelText="לא, אני רוצה לשנות"
+          confirmText="כן, העתק ללוח"
+          confirmButtonColor="#03A9F4"
+          progressColor="#03A9F4"
+          onCancelPressed={() => {
+            this.hideAlert();
+            this.setState({hasCanceled: true});
+            this.setState({isDialogVisible: true});
+          }}
+          onConfirmPressed={() => {
+            this.hideAlert();
+            this.exitAfterScan();
+          }}
+          onDismiss={() => {
+            if(!this.state.hasCanceled) {
+              this.hideAlert();
+              this.setState({isDialogVisible: false});
+              this.camera.resumePreview();
+              this.setState({hasDetected: false}, () => {
+                this.setState({value: null});
+                this.setState({hasCanceled: false});
+              });
+            }
+          }}
+        />
       </RNCamera>
     );
   }
@@ -81,13 +139,14 @@ export default class Main extends Component {
     this.setState({textBlocks: textBlocks.map(this.extractNumbers)})
   };
 
-  exitAfterScan = (value) => {
-    this.copyToClipboard(value);
-    const thanksMessage = 'תודה. לוחית הרישוי הועתקה ללוח בהצלחה.';
-    alert(thanksMessage);
-    this.sleep(2000);
+  exitAfterScan = () => {
+    this.copyToClipboard(this.state.value);
+    const completeMessage = 'לוחית הרישוי הועתקה ללוח בהצלחה';
+    ToastAndroid.show(completeMessage, ToastAndroid.LONG);
     this.setState({hasDetected: false});
+    this.sleep(2000);
     this.camera.resumePreview();
+    this.setState({value: null});
     BackHandler.exitApp();
   }
   extractNumbers = (item) => {
@@ -118,10 +177,12 @@ export default class Main extends Component {
   licensePlateDetected = (value) => {
 
     console.log(value);
+    this.setState({ value });
     this.camera.pausePreview();
-    const beforeId = 'המספר שזוהה: ';
-    const afterId = '. האם המספר מתאים?'
-    Alert.alert(
+    this.showAlert();
+    // const beforeId = 'המספר שזוהה: ';
+    // const afterId = '. האם המספר מתאים?';
+    /*Alert.alert(
       'לוחית רישוי זוהתה',
       beforeId + value + afterId,
       [
@@ -142,6 +203,6 @@ export default class Main extends Component {
 
       ],
       {cancelable: false},
-    );
+    );*/
   }
 }
