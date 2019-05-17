@@ -23,7 +23,7 @@ export default class Main extends Component {
     hasCanceled: false,
     value: null,
   };
-  ss
+  
   showAlert = () => {
     this.setState({
       showAlert: true
